@@ -1,5 +1,5 @@
 import './App.css';
-import {useState, useEffect} from "react";
+import {useEffect, useState} from "react";
 import "milligram";
 import MovieForm from "./MovieForm";
 import MoviesList from "./MoviesList";
@@ -24,41 +24,23 @@ function App() {
         const response = await fetch('/movies', {
             method: 'POST',
             body: JSON.stringify(movie),
-            headers: {'Content-Type': 'application/json'}
+            headers: { 'Content-Type': 'application/json' }
         });
         if (response.ok) {
+            const movieWithId = await response.json();
+            movie.id = movieWithId.id;
             setMovies([...movies, movie]);
             setAddingMovie(false);
         }
     }
 
-    // async function handleDeleteMovie(movie) {
-    //     const response = await fetch('/movies/{movie_id}', {
-    //             method: 'DELETE'
-    //         }
-    //     );
-    //     if (response.ok) {
-    //         const setMovies = movies.filter(m => m !== movie)
-    //     }
-    // }
-
-    // async function handleDeleteMovie(movie) {
-    //     const response = await fetch(`/movies/${movie.id}`, {
-    //         method: 'DELETE',
-    //     });
-    //     if (response.ok) {
-    //         const nextMovies = movies.filter(m => m !== movie);
-    //         setMovies(nextMovies);
-    //     }
-    // }
-
     async function handleDeleteMovie(movie) {
-            const url = `/movies/${movie.id}`;
-            const response = await fetch(url, {method: 'DELETE'});
-            if (response.ok) {
-                setMovies(movies.filter(m => m !== movie))
-            }
+        const url = `/movies/${movie.id}`;
+        const response = await fetch(url, {method: 'DELETE'});
+        if (response.ok) {
+            setMovies(movies.filter(m => m !== movie));
         }
+    }
 
     return (
         <div className="container">
