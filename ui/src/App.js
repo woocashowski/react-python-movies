@@ -32,13 +32,41 @@ function App() {
         }
     }
 
+    // async function handleDeleteMovie(movie) {
+    //     const response = await fetch('/movies/{movie_id}', {
+    //             method: 'DELETE'
+    //         }
+    //     );
+    //     if (response.ok) {
+    //         const setMovies = movies.filter(m => m !== movie)
+    //     }
+    // }
+
+    // async function handleDeleteMovie(movie) {
+    //     const response = await fetch(`/movies/${movie.id}`, {
+    //         method: 'DELETE',
+    //     });
+    //     if (response.ok) {
+    //         const nextMovies = movies.filter(m => m !== movie);
+    //         setMovies(nextMovies);
+    //     }
+    // }
+
+    async function handleDeleteMovie(movie) {
+            const url = `/movies/${movie.id}`;
+            const response = await fetch(url, {method: 'DELETE'});
+            if (response.ok) {
+                setMovies(movies.filter(m => m !== movie))
+            }
+        }
+
     return (
         <div className="container">
             <h1>My favourite movies to watch</h1>
             {movies.length === 0
                 ? <p>No movies yet. Maybe add something?</p>
                 : <MoviesList movies={movies}
-                              onDeleteMovie={(movie) => setMovies(movies.filter(m => m !== movie))}
+                              onDeleteMovie={handleDeleteMovie}
                 />}
             {addingMovie
                 ? <MovieForm onMovieSubmit={handleAddMovie}
