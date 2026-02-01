@@ -19,23 +19,23 @@ export default function MovieForm(props) {
     }
 
     return <form onSubmit={addMovie}>
-        <h2>Add movie</h2>
+        <h2>Dodaj film</h2>
         <div>
             <label>Tytuł</label>
             <input type="text" value={title} onChange={(event) => setTitle(event.target.value)}/>
         </div>
         <div>
-            <label>Year</label>
+            <label>Rok produkcji</label>
             <input type="text" value={year} onChange={(event) => setYear(event.target.value)}/>
         </div>
         <div>
-            <label>Director</label>
+            <label>Reżyser</label>
             <input type="text" value={director} onChange={(event) => setDirector(event.target.value)}/>
         </div>
         <div>
-            <label>Description</label>
+            <label>Opis</label>
             <textarea value={description} onChange={(event) => setDescription(event.target.value)}/>
         </div>
-        <button>{props.buttonLabel || 'Submit'}</button>
+        <button>{props.buttonLabel || 'Wyślij'}</button>
     </form>;
 }

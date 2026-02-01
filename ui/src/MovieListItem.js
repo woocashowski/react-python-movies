@@ -8,9 +8,11 @@ export default function MovieListItem(props) {
                 {' '}
                 directed by {props.movie.director}
                 {' '}
-                <a onClick={props.onDelete}>Delete</a>
+                <button onClick={props.onDelete} style={{marginLeft: '10px'}}>Usuń</button>
+                {' '}
+                <button onClick={props.onManageActors} style={{marginLeft: '5px'}}>Zarządzaj aktorami</button>
             </div>
-            {props.movie.description}
+            {props.movie.description && <div style={{marginTop: '8px', fontStyle: 'italic'}}>{props.movie.description}</div>}
         </div>
     );
 }

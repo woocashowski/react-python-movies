@@ -10,6 +10,9 @@ class Movie(BaseModel):
     title: str
     year: str
 
+class Actor(BaseModel):
+    name: str
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="../ui/build/static", check_dir=False), name="static")
@@ -82,6 +85,152 @@ def delete_movies(movie_id:int):
     cursor.execute("DELETE FROM movies")
     db.commit()
     return {"message": f"Deleted {cursor.rowcount} movies"}
+
+
+# ===== ACTOR MANAGEMENT ENDPOINTS =====
+
+@app.get('/actors')
+def get_actors():
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    actors = cursor.execute('SELECT * FROM actors')
+    
+    output = []
+    for actor in actors:
+        actor_dict = {'id': actor[0], 'name': actor[1]}
+        output.append(actor_dict)
+    db.close()
+    return output
+
+
+@app.get('/actors/{actor_id}')
+def get_single_actor(actor_id: int):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    actor = cursor.execute('SELECT * FROM actors WHERE id=?', (actor_id,)).fetchone()
+    db.close()
+    if actor is None:
+        return {'message': "Actor not found"}
+    return {'id': actor[0], 'name': actor[1]}
+
+
+@app.post("/actors")
+def add_actor(actor: Actor):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO actors (name) VALUES (?)", (actor.name,))
+    db.commit()
+    new_id = cursor.lastrowid
+    db.close()
+    return {
+        "message": f"Actor with id = {new_id} added successfully",
+        "id": new_id,
+        "name": actor.name
+    }
+
+
+@app.put("/actors/{actor_id}")
+def update_actor(actor_id: int, actor: Actor):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    cursor.execute("UPDATE actors SET name = ? WHERE id = ?", (actor.name, actor_id))
+    db.commit()
+    if cursor.rowcount == 0:
+        db.close()
+        return {"message": f"Actor with id = {actor_id} not found"}
+    db.close()
+    return {"message": f"Actor with id = {actor_id} updated successfully"}
+
+
+@app.delete("/actors/{actor_id}")
+def delete_actor(actor_id: int):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    # First, remove actor from all movies
+    cursor.execute("DELETE FROM movie_actors WHERE actor_id = ?", (actor_id,))
+    # Then delete the actor
+    cursor.execute("DELETE FROM actors WHERE id = ?", (actor_id,))
+    db.commit()
+    if cursor.rowcount == 0:
+        db.close()
+        return {"message": f"Actor with id = {actor_id} not found"}
+    db.close()
+    return {"message": f"Actor with id = {actor_id} deleted successfully"}
+
+
+# ===== MOVIE-ACTOR ASSOCIATION ENDPOINTS =====
+
+@app.get('/movies/{movie_id}/actors')
+def get_movie_actors(movie_id: int):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    actors = cursor.execute(
+        'SELECT a.id, a.name FROM actors a '
+        'JOIN movie_actors ma ON a.id = ma.actor_id '
+        'WHERE ma.movie_id = ?',
+        (movie_id,)
+    )
+    
+    output = []
+    for actor in actors:
+        actor_dict = {'id': actor[0], 'name': actor[1]}
+        output.append(actor_dict)
+    db.close()
+    return output
+
+
+@app.post('/movies/{movie_id}/actors/{actor_id}')
+def add_actor_to_movie(movie_id: int, actor_id: int):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    
+    # Check if movie exists
+    movie = cursor.execute('SELECT * FROM movies WHERE id=?', (movie_id,)).fetchone()
+    if movie is None:
+        db.close()
+        return {'message': "Movie not found"}
+    
+    # Check if actor exists
+    actor = cursor.execute('SELECT * FROM actors WHERE id=?', (actor_id,)).fetchone()
+    if actor is None:
+        db.close()
+        return {'message': "Actor not found"}
+    
+    # Check if association already exists
+    existing = cursor.execute(
+        'SELECT * FROM movie_actors WHERE movie_id=? AND actor_id=?',
+        (movie_id, actor_id)
+    ).fetchone()
+    if existing:
+        db.close()
+        return {'message': "Actor is already assigned to this movie"}
+    
+    # Add association
+    cursor.execute(
+        'INSERT INTO movie_actors (movie_id, actor_id) VALUES (?, ?)',
+        (movie_id, actor_id)
+    )
+    db.commit()
+    db.close()
+    return {
+        "message": f"Actor {actor[1]} assigned to movie {movie[1]} successfully"
+    }
+
+
+@app.delete('/movies/{movie_id}/actors/{actor_id}')
+def remove_actor_from_movie(movie_id: int, actor_id: int):
+    db = sqlite3.connect('movies.db')
+    cursor = db.cursor()
+    cursor.execute(
+        'DELETE FROM movie_actors WHERE movie_id=? AND actor_id=?',
+        (movie_id, actor_id)
+    )
+    db.commit()
+    if cursor.rowcount == 0:
+        db.close()
+        return {"message": f"Association between movie {movie_id} and actor {actor_id} not found"}
+    db.close()
+    return {"message": f"Actor removed from movie successfully"}
 
 
 # if __name__ == '__main__':
